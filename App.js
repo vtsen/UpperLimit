@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, AppState } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
 export default function App() {
@@ -7,19 +7,46 @@ export default function App() {
   const [seconds, setSeconds] = useState(0);
   const [time, setTime] = useState(minutes * 60 + seconds);
   const [hasStarted, setHasStarted] = useState(false);
+  const [startTime, setStartTime] = useState(null); // Store the timestamp when timer starts
 
   useEffect(() => {
-    let timer;    
-    if (hasStarted && time > 0) {
+    let timer;
+
+    if (hasStarted) {
+      if (!startTime) {
+        setStartTime(Date.now()); // Save the current time at the beginning
+      }
+
       timer = setInterval(() => {
-        setTime(prevTime => prevTime - 1);
+        const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        const newTime = Math.max(time - elapsedTime, 0);
+        setTime(newTime);
+
+        if (newTime === 0) {
+          clearInterval(timer);
+          setHasStarted(false);
+          alert("Time's up! Take a break.");
+        }
       }, 1000);
-    } else if (time === 0) {
-      setHasStarted(false);
-      alert("Time's up! Take a break.");    // TODO: change to notification
+    } else {
+      clearInterval(timer);
+      setStartTime(null);
     }
+
     return () => clearInterval(timer);
-  }, [hasStarted, time]);
+  }, [hasStarted, startTime]);
+
+  // Handle App State Changes (Resuming the App)
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active" && hasStarted) {
+        const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        setTime(Math.max(1500 - elapsedTime, 0));
+      }
+    });
+
+    return () => subscription.remove();
+  }, [hasStarted, startTime]);  
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
