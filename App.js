@@ -7,11 +7,10 @@ export default function App() {
   const [seconds, setSeconds] = useState(0);
   const [time, setTime] = useState(minutes * 60 + seconds);
   const [hasStarted, setHasStarted] = useState(false);
-  const [onPause, setOnPause] = useState(false);
 
   useEffect(() => {
     let timer;    
-    if (hasStarted && time > 0 && !onPause) {
+    if (hasStarted && time > 0) {
       timer = setInterval(() => {
         setTime(prevTime => prevTime - 1);
       }, 1000);
@@ -20,7 +19,7 @@ export default function App() {
       alert("Time's up! Take a break.");    // TODO: change to notification
     }
     return () => clearInterval(timer);
-  }, [hasStarted, onPause, time]);
+  }, [hasStarted, time]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -44,8 +43,8 @@ export default function App() {
               style={styles.picker}
               onValueChange={(itemValue) => setMinutes(itemValue)}
             >
-              {[...Array(11).keys()].map((num) => (
-                <Picker.Item key={num} label={`${num} min`} value={num} />
+              {Array.from({ length: 6 }, (_, i) => (
+                <Picker.Item key={i} label={`${i} min`} value={i} />
               ))}
             </Picker>
             <Picker
@@ -53,30 +52,32 @@ export default function App() {
               style={styles.picker}
               onValueChange={(itemValue) => setSeconds(itemValue)}
             >
-              {[...Array(60).keys()].map((num) => (
-                <Picker.Item key={num} label={`${num} sec`} value={num} />
+              {Array.from({ length: 12 }, (_, i) => (
+                <Picker.Item key={i*5} label={`${i*5} sec`} value={i*5} />
               ))}
             </Picker>
           </View>
         </>
       ) : (
+        <>
+        <Text style={styles.hint}>
+          Once started, no pause. Get your things done within the upper limit.
+          </Text>
         <Text style={styles.timer}>{formatTime(time)}</Text>
+        </>
       )}
 
       // Start/pause/resume button
       <Button title={
-          hasStarted ? (onPause ? "Resume" : "Pause") : "Start"
+          hasStarted ? "Abandon" : "Start"
         } 
         onPress={
           hasStarted 
-          ? () => {
-            onPause ? setOnPause(false) : setOnPause(true);
-          } 
+          ? () => {setHasStarted(false);}
           : startTimer
         } />
       <Button title="Reset" onPress={() => {
-        setHasStarted(false); 
-        setOnPause(false);
+        setHasStarted(false);
         setTime(minutes * 60 + seconds); 
         }
         } />
@@ -93,6 +94,11 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 30,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  hint: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#000',
   },
